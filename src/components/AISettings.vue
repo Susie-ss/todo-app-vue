@@ -118,6 +118,8 @@ function save() {
 
 <style scoped>
 .ai-settings-modal { width: 440px; }
+.modal-body { padding: 16px; }
+.modal-footer { padding: 12px 16px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--border); }
 .setting-section { margin-top: 16px; }
 .setting-section.disabled { opacity: 0.5; pointer-events: none; }
 .setting-row { margin-bottom: 16px; }
@@ -125,19 +127,20 @@ function save() {
 .setting-row input, .setting-row select {
   width: 100%; padding: 8px 12px; border: 1px solid var(--border);
   border-radius: 6px; background: var(--bg-input); color: var(--text-primary);
-  font-size: 13px;
+  font-size: 13px; box-sizing: border-box;
 }
 .setting-row input:focus, .setting-row select:focus { outline: none; border-color: var(--accent); }
 .toggle-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
 .toggle-label input { display: none; }
 .toggle-switch {
   width: 40px; height: 22px; background: var(--border); border-radius: 11px;
-  position: relative; transition: var(--transition);
+  position: relative; transition: all 0.2s;
+  flex-shrink: 0;
 }
 .toggle-switch::after {
   content: ''; position: absolute; width: 18px; height: 18px;
-  background: white; border-radius: 50%; top: 2px; left: 2px;
-  transition: var(--transition);
+  background: #fff; border-radius: 50%; top: 2px; left: 2px;
+  transition: all 0.2s;
 }
 .toggle-label input:checked + .toggle-switch { background: var(--accent); }
 .toggle-label input:checked + .toggle-switch::after { left: 20px; }
@@ -148,4 +151,17 @@ function save() {
 .setting-tips p { margin-bottom: 6px; }
 .setting-tips ul { margin: 0; padding-left: 16px; }
 .setting-tips li { margin: 4px 0; }
+/* 按钮样式 */
+.btn-primary {
+  padding: 8px 20px; border-radius: 6px; border: none;
+  background: var(--accent); color: #fff; font-size: 14px; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary {
+  padding: 8px 20px; border-radius: 6px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-primary); font-size: 14px; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { background: var(--bg-hover); }
 </style>
