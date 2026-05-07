@@ -17,14 +17,24 @@
         <div class="toolbar-divider"></div>
         <button class="toolbar-btn" @click="insertMd('**','**')"><b>B</b></button>
         <button class="toolbar-btn" style="font-style:italic" @click="insertMd('*','*')"><i>I</i></button>
+        <button class="toolbar-btn" @click="insertMd('~~','~~')"><s>S</s></button>
+        <button class="toolbar-btn" @click="insertMd('`','`')">&lt;/&gt;</button>
+        <div class="toolbar-divider"></div>
         <button class="toolbar-btn" @click="insertMd('# ','')">H1</button>
         <button class="toolbar-btn" @click="insertMd('## ','')">H2</button>
         <button class="toolbar-btn" @click="insertMd('### ','')">H3</button>
         <div class="toolbar-divider"></div>
         <button class="toolbar-btn" @click="insertMd('- [ ] ','')">☐</button>
         <button class="toolbar-btn" @click="insertMd('- ','')">•</button>
+        <button class="toolbar-btn" @click="insertMd('1. ','')">1.</button>
         <button class="toolbar-btn" @click="insertMd('> ','')">❝</button>
-        <button class="toolbar-btn" @click="insertMd('`','`')">&lt;/&gt;</button>
+        <div class="toolbar-divider"></div>
+        <button class="toolbar-btn" @click="insertMd('[','](')" title="插入链接">🔗</button>
+        <button class="toolbar-btn" @click="insertMd('![alt](',')')" title="插入图片">🖼️</button>
+        <button class="toolbar-btn" @click="insertCodeBlock" title="插入代码块">📦</button>
+        <button class="toolbar-btn" @click="insertMd('\n---\n','')" title="分割线">—</button>
+        <button class="toolbar-btn" @click="insertMd('| 列1 | 列2 |\n| --- | --- |\n| ','')">📊</button>
+        <button class="toolbar-btn" @click="insertMd(':$1$','')" title="公式块">∑</button>
         <div class="toolbar-divider"></div>
         <button class="toolbar-btn ai-btn" @click="aiSummarize">✨ AI总结</button>
         <button class="toolbar-btn mic-btn" :class="{recording: isRecording}" @click="toggleVoice">
@@ -151,20 +161,46 @@ const wordCount = computed(() => {
 const renderedContent = computed(() => {
   const md = activeNote.value?.content || ''
   if (!md) return '<p style="color:var(--text-muted)">暂无内容</p>'
-  return md
+  let html = md
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // 分割线
+    .replace(/^---$/gm, '<hr>')
+    // 代码块（先处理，防止内部被转换）
+    .replace(/```([\w]*)\n([\s\S]*?)```/g, '<pre><code class="lang-$1">$2</code></pre>')
+    // 标题
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
     .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // 文本样式
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/~~(.+?)~~/g, '<del>$1</del>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // 链接和图片
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%">')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+    // 引用
     .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
+    // 任务列表
     .replace(/^- \[x\] (.+)$/gm, '<div class="rendered-todo"><span class="rt-check checked">✓</span>$1</div>')
     .replace(/^- \[ \] (.+)$/gm, '<div class="rendered-todo"><span class="rt-check"></span>$1</div>')
+    // 无序列表
     .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
-    .replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')
+    // 有序列表
+    .replace(/^\d+\. (.+)$/gm, '<li class="ol-item">$1</li>')
+    // 合并连续的 li
+    .replace(/(<li>[\s\S]*?<\/li>)+/g, '<ul>$&</ul>')
+    // 合并连续的 blockquote
+    .replace(/(<blockquote>[\s\S]*?<\/blockquote>)+/g, (m) => '<blockquote>' + m.replace(/<\/?blockquote>/g, '') + '</blockquote>')
+    // 段落
+    .replace(/\n\n/g, '</p><p>')
+  // 包裹为段落
+  html = '<p>' + html + '</p>'
+  // 清理空段落
+  html = html.replace(/<p>\s*<\/p>/g, '')
+  // hr 需要独立
+  html = html.replace(/<\/p><hr><p>/g, '<hr>')
+  return html
 })
 
 function formatFullDate(d) {
@@ -184,6 +220,17 @@ function onEditorChange() {
 
 // 处理回车保持列表样式
 function handleKeydown(e) {
+  // 快捷键处理
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+  const mod = isMac ? e.metaKey : e.ctrlKey
+  if (mod) {
+    if (e.key === 'b') { e.preventDefault(); insertMd('**','**') }
+    if (e.key === 'i') { e.preventDefault(); insertMd('*','*') }
+    if (e.key === 'd') { e.preventDefault(); insertMd('~~','~~') }
+    if (e.key === 'k') { e.preventDefault(); insertMd('[',']()') }
+    return
+  }
+
   if (e.key !== 'Enter') return
   const ta = e.target
   const pos = ta.selectionStart
@@ -193,7 +240,8 @@ function handleKeydown(e) {
 
   // 检测当前行是否是列表项
   const todoMatch = line.match(/^(\s*)(- \[[ x]\]\s*)$/)
-  const ulMatch = line.match(/^(\s*)(-\s+)$/)
+  const ulMatch = line.match(/^(\s*)(-\s+)(.*)$/)
+  const olMatch = line.match(/^(\s*)(\d+)(\.\s+)(.*)$/)
   const blockquoteMatch = line.match(/^(\s*)(>\s*)$/)
   const headingMatch = line.match(/^(\s*)(#{1,6})(\s*)$/)
 
@@ -216,6 +264,15 @@ function handleKeydown(e) {
     e.preventDefault()
     const prefix = ulMatch[1] + ulMatch[2]
     const insert = '\n' + prefix
+    ta.value = text.slice(0, pos) + insert + text.slice(pos)
+    ta.selectionStart = ta.selectionEnd = pos + insert.length
+    onEditorChange()
+  } else if (olMatch) {
+    // 有序列表：回车自动递增序号
+    e.preventDefault()
+    const prefix = olMatch[1] + olMatch[2] + olMatch[3]
+    const nextNum = parseInt(olMatch[2]) + 1
+    const insert = '\n' + olMatch[1] + nextNum + '. '
     ta.value = text.slice(0, pos) + insert + text.slice(pos)
     ta.selectionStart = ta.selectionEnd = pos + insert.length
     onEditorChange()
@@ -292,6 +349,21 @@ function insertMd(before, after) {
     ta.value = ta.value.slice(0, start) + before + sel + after + ta.value.slice(end)
     ta.selectionStart = start + before.length
     ta.selectionEnd = start + before.length + sel.length
+    ta.focus()
+    onEditorChange()
+  })
+}
+function insertCodeBlock() {
+  nextTick(() => {
+    const ta = textareaRef.value
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const sel = ta.value.slice(start, end)
+    const block = '\n```\n' + (sel || '代码') + '\n```\n'
+    ta.value = ta.value.slice(0, start) + block + ta.value.slice(end)
+    ta.selectionStart = start + 5
+    ta.selectionEnd = start + 5 + (sel || '代码').length
     ta.focus()
     onEditorChange()
   })
@@ -450,9 +522,15 @@ function exportNote() {
 .note-rendered :deep(h2) { font-size: 18px; margin: 14px 0 6px; }
 .note-rendered :deep(h3) { font-size: 15px; margin: 12px 0 4px; }
 .note-rendered :deep(code) { background: var(--bg-hover); padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+.note-rendered :deep(pre) { background: var(--bg-hover); padding: 12px; border-radius: 6px; overflow-x: auto; margin: 12px 0; }
+.note-rendered :deep(pre code) { background: none; padding: 0; }
 .note-rendered :deep(blockquote) { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--text-secondary); margin: 8px 0; }
 .note-rendered :deep(ul) { padding-left: 20px; }
 .note-rendered :deep(li) { margin: 4px 0; }
+.note-rendered :deep(hr) { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.note-rendered :deep(a) { color: var(--accent); text-decoration: none; }
+.note-rendered :deep(a:hover) { text-decoration: underline; }
+.note-rendered :deep(img) { max-width: 100%; border-radius: 6px; margin: 8px 0; }
 .note-rendered :deep(.rendered-todo) { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
 .note-rendered :deep(.rt-check) { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid var(--border); display: inline-block; }
 .note-rendered :deep(.rt-check.checked) { background: var(--accent); border-color: var(--accent); color: white; font-size: 10px; text-align: center; line-height: 14px; }
