@@ -1,7 +1,7 @@
 {
-  "name": "workbuddy-notes",
+  "name": "jotto",
   "version": "1.0.0",
-  "description": "WorkBuddy Notes - 笔记与便签管理应用",
+  "description": "Jotto - 简洁高效的笔记与便签管理应用",
   "type": "module",
   "scripts": {
     "dev": "vite",

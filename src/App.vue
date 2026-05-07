@@ -1,5 +1,5 @@
 <template>
-  <div class="app">
+  <div class="app" :data-theme="uiStore.theme">
     <TitleBar />
     <div class="app-body">
       <Sidebar />
@@ -32,7 +32,9 @@ import Modal from './components/Modal.vue'
 import NewNoteModal from './components/NewNoteModal.vue'
 import NewFolderModal from './components/NewFolderModal.vue'
 import { useNoteStore } from './stores/noteStore'
+import { useUIStore } from './stores/uiStore'
 
 const noteStore = useNoteStore()
+const uiStore = useUIStore()
 noteStore.init()
 </script>
