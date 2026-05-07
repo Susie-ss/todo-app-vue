@@ -195,6 +195,7 @@ function handleKeydown(e) {
   const todoMatch = line.match(/^(\s*)(- \[[ x]\]\s*)$/)
   const ulMatch = line.match(/^(\s*)(-\s+)$/)
   const blockquoteMatch = line.match(/^(\s*)(>\s*)$/)
+  const headingMatch = line.match(/^(\s*)(#{1,6})(\s*)$/)
 
   if (todoMatch) {
     e.preventDefault()
@@ -204,6 +205,14 @@ function handleKeydown(e) {
     ta.selectionStart = ta.selectionEnd = pos + insert.length
     onEditorChange()
   } else if (ulMatch) {
+    // 检查下一行是否是空行，如果是则结束列表
+    const nextLineStart = pos
+    const nextLineEnd = text.indexOf('\n', nextLineStart)
+    const nextLine = nextLineEnd === -1 ? text.slice(nextLineStart) : text.slice(nextLineStart, nextLineEnd)
+    if (nextLine.trim() === '') {
+      // 列表后是空行，不续前缀，让用户自然结束列表
+      return
+    }
     e.preventDefault()
     const prefix = ulMatch[1] + ulMatch[2]
     const insert = '\n' + prefix
@@ -213,6 +222,14 @@ function handleKeydown(e) {
   } else if (blockquoteMatch) {
     e.preventDefault()
     const prefix = blockquoteMatch[1] + blockquoteMatch[2]
+    const insert = '\n' + prefix
+    ta.value = text.slice(0, pos) + insert + text.slice(pos)
+    ta.selectionStart = ta.selectionEnd = pos + insert.length
+    onEditorChange()
+  } else if (headingMatch) {
+    // 标题行回车，延续同级标题
+    e.preventDefault()
+    const prefix = headingMatch[1] + headingMatch[2] + ' '
     const insert = '\n' + prefix
     ta.value = text.slice(0, pos) + insert + text.slice(pos)
     ta.selectionStart = ta.selectionEnd = pos + insert.length
