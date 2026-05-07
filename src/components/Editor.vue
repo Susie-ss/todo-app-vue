@@ -74,6 +74,7 @@
           ref="textareaRef"
           v-model="activeNote.content"
           @input="onEditorChange"
+          @keydown="handleKeydown"
           placeholder="开始输入，支持 Markdown 语法..."
         ></textarea>
 
@@ -179,6 +180,44 @@ function onTitleChange() {
 function onEditorChange() {
   if (!activeNote.value) return
   noteStore.updateNote(activeNote.value.id, { content: activeNote.value.content })
+}
+
+// 处理回车保持列表样式
+function handleKeydown(e) {
+  if (e.key !== 'Enter') return
+  const ta = e.target
+  const pos = ta.selectionStart
+  const text = ta.value
+  const lineStart = text.lastIndexOf('\n', pos - 1) + 1
+  const line = text.slice(lineStart, pos)
+
+  // 检测当前行是否是列表项
+  const todoMatch = line.match(/^(\s*)(- \[[ x]\]\s*)$/)
+  const ulMatch = line.match(/^(\s*)(-\s+)$/)
+  const blockquoteMatch = line.match(/^(\s*)(>\s*)$/)
+
+  if (todoMatch) {
+    e.preventDefault()
+    const prefix = todoMatch[1] + todoMatch[2]
+    const insert = '\n' + prefix
+    ta.value = text.slice(0, pos) + insert + text.slice(pos)
+    ta.selectionStart = ta.selectionEnd = pos + insert.length
+    onEditorChange()
+  } else if (ulMatch) {
+    e.preventDefault()
+    const prefix = ulMatch[1] + ulMatch[2]
+    const insert = '\n' + prefix
+    ta.value = text.slice(0, pos) + insert + text.slice(pos)
+    ta.selectionStart = ta.selectionEnd = pos + insert.length
+    onEditorChange()
+  } else if (blockquoteMatch) {
+    e.preventDefault()
+    const prefix = blockquoteMatch[1] + blockquoteMatch[2]
+    const insert = '\n' + prefix
+    ta.value = text.slice(0, pos) + insert + text.slice(pos)
+    ta.selectionStart = ta.selectionEnd = pos + insert.length
+    onEditorChange()
+  }
 }
 function toggleTodo(todoId) {
   if (!activeNote.value) return
@@ -343,7 +382,7 @@ function exportNote() {
 </script>
 
 <style scoped>
-.editor-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.editor-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; height: 100%; }
 .empty-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   height: 100%; gap: 12px; color: var(--text-muted); text-align: center; padding: 40px;
@@ -355,10 +394,10 @@ function exportNote() {
   padding: 8px 20px; border-radius: 6px; background: var(--accent);
   border: none; color: white; font-size: 13px; cursor: pointer;
 }
-.editor-content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.editor-content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
 .editor-toolbar {
   padding: 6px 12px; display: flex; align-items: center; gap: 3px;
-  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap;
 }
 .toolbar-btn {
   padding: 4px 8px; border-radius: 4px; border: none; background: transparent;
@@ -373,7 +412,7 @@ function exportNote() {
 .toolbar-btn.mic-btn.recording { color: var(--danger); animation: pulse 1s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 .toolbar-divider { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
-.editor-header { padding: 12px 24px; border-bottom: 1px solid var(--border-light); }
+.editor-header { padding: 12px 24px; border-bottom: 1px solid var(--border-light); flex-shrink: 0; }
 .editor-title-input {
   width: 100%; background: none; border: none; outline: none;
   color: var(--text-primary); font-size: 18px; font-weight: 700; font-family: var(--font);
@@ -384,9 +423,9 @@ function exportNote() {
   color: var(--text-secondary); cursor: pointer;
 }
 .meta-tag .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.editor-body { flex: 1; overflow-y: auto; padding: 16px 24px; }
+.editor-body { flex: 1; overflow-y: auto; padding: 16px 24px; min-height: 0; }
 .editor-textarea {
-  width: 100%; min-height: 400px; background: none; border: none; outline: none;
+  width: 100%; height: 100%; background: none; border: none; outline: none;
   color: var(--text-primary); font-size: 14px; line-height: 1.8; resize: none; font-family: var(--font);
 }
 .note-rendered { line-height: 1.8; color: var(--text-primary); }
@@ -436,7 +475,7 @@ function exportNote() {
 .editor-statusbar {
   padding: 6px 24px; border-top: 1px solid var(--border);
   display: flex; align-items: center; gap: 16px;
-  background: var(--bg-sidebar); font-size: 11px; color: var(--text-muted);
+  background: var(--bg-sidebar); font-size: 11px; color: var(--text-muted); flex-shrink: 0;
 }
 .statusbar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--success); display: inline-block; }
 </style>
