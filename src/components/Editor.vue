@@ -64,10 +64,27 @@
           <div class="meta-tag" @click="cycleColor">
             <span class="dot" :style="{background: colorMap[activeNote.color] || colorMap.default}"></span>
             <span>{{ colorLabel(activeNote.color) }}</span>
+            <span class="meta-arrow">▼</span>
           </div>
-          <div class="meta-tag">
+          <div class="meta-tag folder-selector" @click.stop="toggleFolderMenu">
             <span>📁</span>
             <span>{{ getFolderName(activeNote.folderId) }}</span>
+            <span class="meta-arrow">▼</span>
+            <!-- 文件夹下拉菜单 -->
+            <div v-if="showFolderMenu" class="meta-dropdown">
+              <div
+                class="dropdown-item"
+                :class="{active: !activeNote.folderId}"
+                @click.stop="setFolder(null)"
+              >未分类</div>
+              <div
+                v-for="folder in noteStore.folders"
+                :key="folder.id"
+                class="dropdown-item"
+                :class="{active: activeNote.folderId === folder.id}"
+                @click.stop="setFolder(folder.id)"
+              >{{ folder.name }}</div>
+            </div>
           </div>
           <div class="meta-tag">
             <span>{{ activeNote.type === 'todo' ? '✅ 待办' : '📄 笔记' }}</span>
@@ -123,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useNoteStore } from '../stores/noteStore'
 import { useUIStore } from '../stores/uiStore'
@@ -136,6 +153,7 @@ const newTodoText = ref('')
 const isRecording = ref(false)
 const textareaRef = ref(null)
 const fileInput = ref(null)
+const showFolderMenu = ref(false)
 let recognition = null
 
 const colorMap = {
@@ -339,6 +357,18 @@ function cycleColor() {
   const next = colors[(idx + 1) % colors.length]
   noteStore.updateNote(activeNote.value.id, { color: next })
 }
+function toggleFolderMenu() {
+  showFolderMenu.value = !showFolderMenu.value
+}
+function setFolder(folderId) {
+  if (!activeNote.value) return
+  noteStore.updateNote(activeNote.value.id, { folderId })
+  showFolderMenu.value = false
+}
+// 点击外部关闭菜单
+function handleDocClick() {
+  showFolderMenu.value = false
+}
 function insertMd(before, after) {
   nextTick(() => {
     const ta = textareaRef.value
@@ -407,6 +437,10 @@ function stopVoice() {
   isRecording.value = false
 }
 function openNewNoteModal() { uiStore.openModal('new-note-modal') }
+
+// 全局点击监听，关闭菜单
+onMounted(() => { document.addEventListener('click', handleDocClick) })
+onUnmounted(() => { document.removeEventListener('click', handleDocClick) })
 
 // === 文件导入导出 ===
 function triggerImport() {
@@ -506,12 +540,27 @@ function exportNote() {
   width: 100%; background: none; border: none; outline: none;
   color: var(--text-primary); font-size: 18px; font-weight: 700; font-family: var(--font);
 }
-.editor-meta { display: flex; gap: 12px; margin-top: 8px; }
+.editor-meta { display: flex; gap: 12px; margin-top: 8px; position: relative; }
 .meta-tag {
   display: flex; align-items: center; gap: 4px; font-size: 12px;
-  color: var(--text-secondary); cursor: pointer;
+  color: var(--text-secondary); cursor: pointer; position: relative;
 }
+.meta-tag:hover { color: var(--text-primary); }
 .meta-tag .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.meta-arrow { font-size: 8px; opacity: 0.6; margin-left: 2px; }
+/* 下拉菜单 */
+.meta-dropdown {
+  position: absolute; top: 100%; left: 0; z-index: 100;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 120px; padding: 4px 0; margin-top: 4px;
+}
+.dropdown-item {
+  padding: 6px 12px; font-size: 12px; cursor: pointer;
+  color: var(--text-secondary); transition: var(--transition);
+}
+.dropdown-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.dropdown-item.active { color: var(--accent); font-weight: 600; }
 .editor-body { flex: 1; overflow-y: auto; padding: 16px 24px; min-height: 0; }
 .editor-textarea {
   width: 100%; height: 100%; background: none; border: none; outline: none;
