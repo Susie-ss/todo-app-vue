@@ -17,6 +17,9 @@
     <Modal name="new-folder-modal">
       <NewFolderModal />
     </Modal>
+    <Modal name="ai-settings-modal">
+      <AISettings />
+    </Modal>
   </div>
 </template>
 
@@ -31,6 +34,7 @@ import Toast from './components/Toast.vue'
 import Modal from './components/Modal.vue'
 import NewNoteModal from './components/NewNoteModal.vue'
 import NewFolderModal from './components/NewFolderModal.vue'
+import AISettings from './components/AISettings.vue'
 import { useNoteStore } from './stores/noteStore'
 import { useUIStore } from './stores/uiStore'
 

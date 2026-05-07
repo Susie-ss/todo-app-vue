@@ -29,14 +29,30 @@
         </div>
         <div
           class="tree-item"
+          :class="{active: activeFolder === f.id, dropTarget: isDragging && activeFolder !== f.id}"
           v-for="f in folders"
           :key="f.id"
-          :class="{active: activeFolder === f.id}"
           @click="activeFolder = f.id; filterType = ''"
+          @dragover.prevent="onDragOver(f.id)"
+          @dragleave="onDragLeave"
+          @drop="onDrop(f.id)"
         >
           <span class="tree-icon">📁</span>
           <span class="tree-label">{{ f.name }}</span>
           <span class="tree-count">{{ getFolderCount(f.id) }}</span>
+        </div>
+        <!-- 未分类作为拖放目标 -->
+        <div
+          class="tree-item"
+          :class="{active: activeFolder === null && !filterType, dropTarget: isDragging && activeFolder !== null}"
+          @click="clearFilter"
+          @dragover.prevent="onDragOver(null)"
+          @dragleave="onDragLeave"
+          @drop="onDrop(null)"
+        >
+          <span class="tree-icon">📂</span>
+          <span class="tree-label">未分类</span>
+          <span class="tree-count">{{ getFolderCount(null) }}</span>
         </div>
       </div>
     </div>
@@ -55,6 +71,7 @@ const { notes, folders, activeFolder } = storeToRefs(noteStore)
 
 const searchQuery = ref('')
 const filterType = ref('')
+const isDragging = ref(false)
 
 const todoCount = computed(() => notes.value.filter(n => n.type === 'todo').length)
 const stickerCount = computed(() => noteStore.stickers.length)
@@ -75,6 +92,30 @@ function setFilter(type) {
 function showFolderModal() {
   uiStore.openModal('new-folder-modal')
 }
+
+// 拖拽支持
+function onDragOver(folderId) {
+  isDragging.value = true
+}
+function onDragLeave() {
+  isDragging.value = false
+}
+function onDrop(folderId) {
+  isDragging.value = false
+  const noteId = dragState.noteId
+  if (noteId) {
+    noteStore.updateNote(noteId, { folderId })
+    uiStore.showToast('已移动到' + (folderId ? getFolderName(folderId) : '未分类'), 'success')
+  }
+  dragState.noteId = null
+}
+function getFolderName(id) {
+  const f = folders.value.find(f => f.id === id)
+  return f?.name || '未分类'
+}
+
+// 暴露拖拽状态给 NoteList
+const dragState = window.__noteDragState = { noteId: null }
 </script>
 
 <style scoped>
@@ -101,7 +142,9 @@ function showFolderModal() {
 }
 .tree-item:hover { background: var(--bg-hover); color: var(--text-primary); }
 .tree-item.active { background: var(--bg-active); color: var(--text-primary); }
+.tree-item.dropTarget { background: var(--accent); color: white; opacity: 0.8; }
 .tree-icon { font-size: 14px; }
 .tree-label { flex: 1; }
 .tree-count { font-size: 11px; color: var(--text-muted); background: var(--bg); padding: 1px 6px; border-radius: 8px; }
+.tree-item.dropTarget .tree-count { background: rgba(255,255,255,0.2); color: white; }
 </style>

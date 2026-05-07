@@ -5,7 +5,10 @@
         <div class="sidebar-logo-icon">📝</div>
         <div class="sidebar-logo-text">Todo</div>
       </div>
-      <button class="sidebar-add-btn" @click="openNewNoteModal">＋</button>
+      <div class="sidebar-actions">
+        <button class="sidebar-settings-btn" @click="openAISettings" title="AI 设置">🤖</button>
+        <button class="sidebar-add-btn" @click="openNewNoteModal">＋</button>
+      </div>
     </div>
     <div class="sidebar-tabs">
       <div class="sidebar-tab" :class="{active: sidebarTab === 'notes'}" @click="sidebarTab = 'notes'">笔记</div>
@@ -34,6 +37,9 @@ const { sidebarTab } = storeToRefs(noteStore)
 function openNewNoteModal() {
   uiStore.openModal('new-note-modal')
 }
+function openAISettings() {
+  uiStore.openModal('ai-settings-modal')
+}
 </script>
 
 <style scoped>
@@ -60,6 +66,12 @@ function openNewNoteModal() {
   justify-content: center; font-size: 14px;
 }
 .sidebar-logo-text { font-size: 15px; font-weight: 700; }
+.sidebar-actions { display: flex; gap: 4px; }
+.sidebar-settings-btn {
+  width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+  background: transparent; cursor: pointer; font-size: 14px; transition: var(--transition);
+}
+.sidebar-settings-btn:hover { background: var(--bg-hover); }
 .sidebar-add-btn {
   width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
   background: transparent; color: var(--text-secondary); cursor: pointer;

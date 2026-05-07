@@ -214,6 +214,36 @@ export const useNoteStore = defineStore('notes', () => {
     saveState()
   }
 
+  // 批量移动笔记到文件夹
+  function moveNotesToFolder(noteIds, folderId) {
+    noteIds.forEach(id => {
+      const note = notes.value.find(n => n.id === id)
+      if (note) {
+        note.folderId = folderId
+        note.updatedAt = now()
+      }
+    })
+    saveState()
+  }
+
+  // 批量删除笔记
+  function deleteNotes(noteIds) {
+    notes.value = notes.value.filter(n => !noteIds.includes(n.id))
+    if (noteIds.includes(activeNoteId.value)) {
+      activeNoteId.value = null
+    }
+    saveState()
+  }
+
+  // 复制笔记
+  function copyNote(id) {
+    const note = notes.value.find(n => n.id === id)
+    if (note) {
+      return createNote(note.title + ' (副本)', note.type, note.color, note.folderId)
+    }
+    return null
+  }
+
   // Sticker Actions
   function createSticker(note = null) {
     const sticker = {
@@ -341,7 +371,7 @@ export const useNoteStore = defineStore('notes', () => {
     init, saveState, genId, now,
     createNote, updateNote, deleteNote, openNote,
     addTodo, toggleTodo, deleteTodo,
-    createFolder, deleteFolder,
+    createFolder, deleteFolder, moveNotesToFolder, deleteNotes, copyNote,
     createSticker, updateSticker, removeSticker, moveSticker, updateStickerZ,
     hideSticker, restoreSticker,
     generateSummary, appendSummary, setFilter

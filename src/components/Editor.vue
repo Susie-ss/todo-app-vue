@@ -403,9 +403,67 @@ function aiSummarize() {
     uiStore.showToast('内容太少，无法总结', 'info')
     return
   }
-  const summary = '[AI 总结] ' + activeNote.value.content.slice(0, 50) + '...'
-  noteStore.updateNote(activeNote.value.id, { content: activeNote.value.content + '\n\n' + summary })
-  uiStore.showToast('AI 总结已添加', 'success')
+
+  const config = uiStore.aiConfig
+  if (!config.enabled || !config.apiKey) {
+    uiStore.showToast('请先在 AI 设置中配置 API', 'info')
+    return
+  }
+
+  const note = activeNote.value
+  const content = note.content.slice(0, 2000) // 限制内容长度
+
+  uiStore.showToast('正在生成总结...', 'info')
+
+  // 构建请求
+  const apiUrl = config.apiUrl || (config.provider === 'siliconflow'
+    ? 'https://api.siliconflow.cn/v1/chat/completions'
+    : 'https://api.openai.com/v1/chat/completions')
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${config.apiKey}`
+  }
+
+  const body = {
+    model: config.model || 'gpt-3.5-turbo',
+    messages: [
+      {
+        role: 'system',
+        content: '你是一个笔记助手，请用简洁的中文总结用户提供的笔记内容，提取核心要点。'
+      },
+      {
+        role: 'user',
+        content: `请总结以下笔记内容：\n\n${content}`
+      }
+    ],
+    temperature: 0.7
+  }
+
+  fetch(apiUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('API 请求失败')
+    return res.json()
+  })
+  .then(data => {
+    const summary = data.choices?.[0]?.message?.content
+    if (summary) {
+      noteStore.updateNote(note.id, {
+        content: note.content + '\n\n---\n## 🤖 AI 总结\n\n' + summary
+      })
+      uiStore.showToast('AI 总结已添加', 'success')
+    } else {
+      throw new Error('无有效响应')
+    }
+  })
+  .catch(err => {
+    console.error('AI Summary Error:', err)
+    uiStore.showToast('AI 总结失败，请检查 API 配置', 'error')
+  })
 }
 function toggleVoice() {
   if (!isRecording.value) startVoice()

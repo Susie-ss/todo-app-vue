@@ -1,11 +1,38 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+const AI_CONFIG_KEY = 'workbuddy-ai-config'
+
 export const useUIStore = defineStore('ui', () => {
   const openModals = ref({})
   const contextMenu = ref({ show: false, x: 0, y: 0, noteId: null })
   const toasts = ref([])
   const ctxTargetId = ref(null)
+
+  // AI 配置
+  const aiConfig = ref(loadAIConfig())
+
+  function loadAIConfig() {
+    try {
+      const saved = localStorage.getItem(AI_CONFIG_KEY)
+      if (saved) return JSON.parse(saved)
+    } catch (e) {}
+    // 默认配置
+    return {
+      enabled: false,
+      provider: 'openai', // openai / siliconflow / custom
+      apiUrl: '',
+      apiKey: '',
+      model: 'gpt-3.5-turbo'
+    }
+  }
+
+  function saveAIConfig(config) {
+    aiConfig.value = { ...config }
+    try {
+      localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(aiConfig.value))
+    } catch (e) {}
+  }
 
   // 深色主题
   const theme = 'dark'
@@ -76,7 +103,8 @@ export const useUIStore = defineStore('ui', () => {
   return {
     openModals, contextMenu, toasts, ctxTargetId,
     theme,
+    aiConfig,
     openModal, closeModal, showContextMenu, hideContextMenu, showToast,
-    applyTheme
+    applyTheme, saveAIConfig
   }
 })
