@@ -1,24 +1,24 @@
-/* CSS Variables - 清新淡雅浅色主题 */
+/* CSS Variables - 深色主题 */
 :root {
-  --bg: #f5f7fa;
-  --bg-sidebar: #ffffff;
-  --bg-content: #f5f7fa;
-  --bg-editor: #ffffff;
-  --bg-card: #ffffff;
-  --bg-hover: #eef1f5;
-  --bg-active: #e5e9f2;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --text-primary: #374151;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-  --border: #e5e7eb;
-  --border-light: #f0f2f5;
-  --danger: #ef4444;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --shadow: 0 2px 8px rgba(0,0,0,0.04);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  --bg: #0f172a;
+  --bg-sidebar: #1e293b;
+  --bg-content: #0f172a;
+  --bg-editor: #1e293b;
+  --bg-card: #1e293b;
+  --bg-hover: #334155;
+  --bg-active: #3f4f6b;
+  --accent: #818cf8;
+  --accent-hover: #6366f1;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: #334155;
+  --border-light: #2a3a55;
+  --danger: #f87171;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --shadow: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
   --radius: 8px;
   --radius-sm: 4px;
   --radius-lg: 12px;
