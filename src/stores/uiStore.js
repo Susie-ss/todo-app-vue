@@ -1,11 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-
-const DIY_KEY = 'diy-theme-colors'
-
-function loadDIYColors() {
-  try { return JSON.parse(localStorage.getItem(DIY_KEY)) || null } catch { return null }
-}
+import { ref } from 'vue'
 
 export const useUIStore = defineStore('ui', () => {
   const openModals = ref({})
@@ -13,34 +7,13 @@ export const useUIStore = defineStore('ui', () => {
   const toasts = ref([])
   const ctxTargetId = ref(null)
 
-  // 主题: 'light' | 'dark' | 'diy'
+  // 主题: 'light' | 'dark'
   const theme = ref(localStorage.getItem('app-theme') || 'light')
-  const diyColors = ref(loadDIYColors() || {
-    primary: '#6366f1',
-    bg: '#ffffff',
-    bgSidebar: '#f8f9fa',
-    textPrimary: '#1a1a2e',
-    textSecondary: '#6b7280',
-    border: '#e5e7eb',
-    accent: '#6366f1',
-    accentHover: '#4f46e5',
-    bgHover: '#f3f4f6',
-    bgEditor: '#ffffff',
-    bgNote: '#ffffff',
-    shadow: '0 2px 8px rgba(0,0,0,0.08)',
-    shadowHover: '0 4px 16px rgba(0,0,0,0.12)'
-  })
 
   function setTheme(val) {
     theme.value = val
     localStorage.setItem('app-theme', val)
     applyTheme()
-  }
-
-  function setDIYColors(colors) {
-    diyColors.value = { ...diyColors.value, ...colors }
-    localStorage.setItem(DIY_KEY, JSON.stringify(diyColors.value))
-    if (theme.value === 'diy') applyTheme()
   }
 
   function applyTheme() {
@@ -49,24 +22,54 @@ export const useUIStore = defineStore('ui', () => {
     root.setAttribute('data-theme', t)
 
     if (t === 'light') {
-      root.style.cssText = ''
-    } else if (t === 'dark') {
+      // 清新淡雅的浅色主题
       root.style.cssText = `
-        --bg: #0f172a; --bg-sidebar: #1e293b; --bg-hover: #334155;
-        --bg-editor: #1e293b; --bg-note: #1e293b; --bg-input: #334155;
-        --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b;
-        --border: #334155; --accent: #818cf8; --accent-hover: #6366f1;
-        --danger: #f87171; --shadow: 0 2px 8px rgba(0,0,0,0.3);
-        --shadow-hover: 0 4px 16px rgba(0,0,0,0.4);
+        --bg: #f5f7fa;
+        --bg-sidebar: #ffffff;
+        --bg-hover: #eef1f5;
+        --bg-editor: #ffffff;
+        --bg-note: #ffffff;
+        --bg-input: #f5f7fa;
+        --text-primary: #374151;
+        --text-secondary: #6b7280;
+        --text-muted: #9ca3af;
+        --border: #e5e7eb;
+        --accent: #3b82f6;
+        --accent-hover: #2563eb;
+        --danger: #ef4444;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --shadow: 0 2px 8px rgba(0,0,0,0.04);
+        --shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
+        --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+        --radius: 8px;
+        --radius-sm: 4px;
+        --radius-lg: 12px;
       `
-    } else if (t === 'diy') {
-      const c = diyColors.value
+    } else {
+      // 深色主题
       root.style.cssText = `
-        --bg: ${c.bg}; --bg-sidebar: ${c.bgSidebar}; --bg-hover: ${c.bgHover};
-        --bg-editor: ${c.bgEditor}; --bg-note: ${c.bgNote}; --bg-input: ${c.bgInput || '#f3f4f6'};
-        --text-primary: ${c.textPrimary}; --text-secondary: ${c.textSecondary}; --text-muted: ${c.textMuted || '#9ca3af'};
-        --border: ${c.border}; --accent: ${c.accent}; --accent-hover: ${c.accentHover};
-        --danger: ${c.danger || '#ef4444'}; --shadow: ${c.shadow}; --shadow-hover: ${c.shadowHover};
+        --bg: #0f172a;
+        --bg-sidebar: #1e293b;
+        --bg-hover: #334155;
+        --bg-editor: #1e293b;
+        --bg-note: #1e293b;
+        --bg-input: #334155;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --border: #334155;
+        --accent: #818cf8;
+        --accent-hover: #6366f1;
+        --danger: #f87171;
+        --success: #34d399;
+        --warning: #fbbf24;
+        --shadow: 0 2px 8px rgba(0,0,0,0.3);
+        --shadow-hover: 0 4px 16px rgba(0,0,0,0.4);
+        --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+        --radius: 8px;
+        --radius-sm: 4px;
+        --radius-lg: 12px;
       `
     }
   }
@@ -109,8 +112,8 @@ export const useUIStore = defineStore('ui', () => {
 
   return {
     openModals, contextMenu, toasts, ctxTargetId,
-    theme, diyColors,
+    theme,
     openModal, closeModal, showContextMenu, hideContextMenu, showToast,
-    setTheme, setDIYColors, applyTheme
+    setTheme, applyTheme
   }
 })
