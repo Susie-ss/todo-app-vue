@@ -103,9 +103,11 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted, onBeforeUnmount
 import { storeToRefs } from 'pinia'
 import { useNoteStore } from '../stores/noteStore'
 import { useUIStore } from '../stores/uiStore'
+import { useAuthStore } from '../stores/authStore'
 
 const noteStore = useNoteStore()
 const uiStore = useUIStore()
+const authStore = useAuthStore()
 const { activeNote } = storeToRefs(noteStore)
 
 const newTodoText = ref('')
@@ -113,6 +115,15 @@ const isRecording = ref(false)
 const fileInput = ref(null)
 const showFolderMenu = ref(false)
 let recognition = null
+
+// ===================== 登录检查 =====================
+function requireLogin() {
+  if (!authStore.isLoggedIn) {
+    uiStore.showToast('请先登录后操作', 'info')
+    return false
+  }
+  return true
+}
 
 // Vditor 实例
 let vditor = null
@@ -161,6 +172,9 @@ function initVditor(content) {
     const el = document.getElementById(vditorId)
     if (!el) { vditorIniting = false; return }
 
+    // 未登录时禁用编辑器
+    const disabled = !authStore.isLoggedIn
+
     // 确保 Vditor 已加载
     const tryInit = () => {
       if (typeof window.Vditor === 'undefined') {
@@ -169,12 +183,12 @@ function initVditor(content) {
       }
       vditor = new window.Vditor(vditorId, {
         height: '100%',
-        placeholder: '开始输入，支持 Markdown 语法...',
+        placeholder: disabled ? '请先登录后编辑笔记' : '开始输入，支持 Markdown 语法...',
         theme: 'dark',
         icon: 'ant',
-        cache: { enable: false }, // 关闭缓存，由我们自己管理内容
+        cache: { enable: false },
         toolbarConfig: { pin: true },
-        toolbar: [
+        toolbar: disabled ? [] : [
           'emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|',
           'list', 'ordered-list', 'check', 'outdent', 'indent', '|',
           'quote', 'line', 'code', 'inline-code', 'insert-before', 'insert-after', '|',
@@ -187,18 +201,23 @@ function initVditor(content) {
           }
         ],
         counter: { enable: true },
-        mode: 'ir',
+        mode: disabled ? 'sv' : 'ir',
         preview: {
           math: { engine: 'KaTeX' },
           hljs: { style: 'github' }
         },
+        input(val) {
+          if (!activeNote.value || disabled) return
+          noteStore.updateNote(activeNote.value.id, { content: val })
+        },
         after() {
           vditor.setValue(content || '')
+          if (disabled) {
+            // 未登录时禁用输入
+            el.style.pointerEvents = 'none'
+            el.style.opacity = '0.7'
+          }
           vditorIniting = false
-        },
-        input(val) {
-          if (!activeNote.value) return
-          noteStore.updateNote(activeNote.value.id, { content: val })
         }
       })
     }
@@ -217,6 +236,16 @@ watch(
     initVditor(activeNote.value?.content || '')
   },
   { flush: 'post' }
+)
+
+// 监听登录状态变化，重新初始化 Vditor
+watch(
+  () => authStore.isLoggedIn,
+  () => {
+    if (activeNote.value && activeNote.value.type !== 'todo') {
+      nextTick(() => initVditor(activeNote.value?.content || ''))
+    }
+  }
 )
 
 // 监听内容变化（外部修改，比如 AI 总结）
@@ -247,30 +276,30 @@ onBeforeUnmount(() => {
 
 // ===================== 功能函数 =====================
 function onTitleChange() {
-  if (!activeNote.value) return
+  if (!activeNote.value || !requireLogin()) return
   noteStore.updateNote(activeNote.value.id, { title: activeNote.value.title })
 }
 
 function toggleTodo(todoId) {
-  if (!activeNote.value) return
+  if (!activeNote.value || !requireLogin()) return
   noteStore.toggleTodo(activeNote.value.id, todoId)
 }
 function deleteTodo(todoId) {
-  if (!activeNote.value) return
+  if (!activeNote.value || !requireLogin()) return
   noteStore.deleteTodo(activeNote.value.id, todoId)
 }
 function addTodo() {
-  if (!activeNote.value || !newTodoText.value.trim()) return
+  if (!activeNote.value || !newTodoText.value.trim() || !requireLogin()) return
   noteStore.addTodo(activeNote.value.id, newTodoText.value.trim())
   newTodoText.value = ''
 }
 function openSticky() {
-  if (!activeNote.value) return
+  if (!activeNote.value || !requireLogin()) return
   noteStore.createSticker(activeNote.value)
   uiStore.showToast('已创建便签', 'success')
 }
 function deleteNote() {
-  if (!activeNote.value) return
+  if (!activeNote.value || !requireLogin()) return
   if (confirm('确定删除这篇笔记？')) {
     noteStore.deleteNote(activeNote.value.id)
   }
@@ -281,24 +310,31 @@ function getFolderName(id) {
   return f ? f.name : '未分类'
 }
 function cycleColor() {
-  if (!activeNote.value) return
+  if (!activeNote.value || !requireLogin()) return
   const colors = Object.keys(colorMap)
   const idx = colors.indexOf(activeNote.value.color)
   const next = colors[(idx + 1) % colors.length]
   noteStore.updateNote(activeNote.value.id, { color: next })
 }
-function toggleFolderMenu() { showFolderMenu.value = !showFolderMenu.value }
+function toggleFolderMenu() { 
+  if (!authStore.isLoggedIn) { uiStore.showToast('请先登录后操作', 'info'); return }
+  showFolderMenu.value = !showFolderMenu.value 
+}
 function setFolder(folderId) {
-  if (!activeNote.value) return
+  if (!activeNote.value || !requireLogin()) return
   noteStore.updateNote(activeNote.value.id, { folderId })
   showFolderMenu.value = false
 }
 function handleDocClick() { showFolderMenu.value = false }
-function openNewNoteModal() { uiStore.openModal('new-note-modal') }
+function openNewNoteModal() { 
+  if (!requireLogin()) return
+  uiStore.openModal('new-note-modal') 
+}
 
 // AI 总结
 function aiSummarize() {
-  if (!activeNote.value || (activeNote.value.content || '').length < 20) {
+  if (!activeNote.value || !requireLogin()) return
+  if ((activeNote.value.content || '').length < 20) {
     uiStore.showToast('内容太少，无法总结', 'info'); return
   }
   const config = uiStore.aiConfig
@@ -335,7 +371,10 @@ function aiSummarize() {
 }
 
 // 语音
-function toggleVoice() { isRecording.value ? stopVoice() : startVoice() }
+function toggleVoice() { 
+  if (!requireLogin()) return
+  isRecording.value ? stopVoice() : startVoice() 
+}
 function startVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition
   if (!SR) { uiStore.showToast('浏览器不支持语音识别', 'info'); return }
@@ -358,8 +397,12 @@ function startVoice() {
 function stopVoice() { if (recognition) recognition.stop(); isRecording.value = false }
 
 // 导入导出
-function triggerImport() { fileInput.value?.click() }
+function triggerImport() { 
+  if (!requireLogin()) return
+  fileInput.value?.click() 
+}
 function importFile(event) {
+  if (!requireLogin()) return
   const file = event.target.files?.[0]
   if (!file) return
   if (!activeNote.value) {
