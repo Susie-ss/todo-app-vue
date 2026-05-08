@@ -12,18 +12,6 @@
       </div>
     </div>
 
-    <!-- 已登录：用户信息条 -->
-    <div v-if="isLoggedIn" class="user-bar" @click="openProfile">
-      <div class="user-avatar-sm" :style="{ background: currentUser.avatarColor || '#818cf8' }">
-        {{ avatarChar }}
-      </div>
-      <div class="user-info">
-        <div class="user-name">{{ currentUser.nickname || currentUser.username }}</div>
-        <div class="user-bio" v-if="currentUser.bio">{{ currentUser.bio }}</div>
-      </div>
-      <div class="user-arrow">›</div>
-    </div>
-
     <div class="sidebar-tabs">
       <div class="sidebar-tab" :class="{active: sidebarTab === 'notes'}" @click="sidebarTab = 'notes'">笔记</div>
       <div class="sidebar-tab" :class="{active: sidebarTab === 'stickers'}" @click="sidebarTab = 'stickers'">便签</div>
@@ -36,31 +24,20 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useNoteStore } from '../stores/noteStore'
 import { useUIStore } from '../stores/uiStore'
-import { useAuthStore } from '../stores/authStore'
 import SidebarNotes from './SidebarNotes.vue'
 import SidebarStickers from './SidebarStickers.vue'
 import SidebarTodo from './SidebarTodo.vue'
 
 const noteStore = useNoteStore()
 const uiStore = useUIStore()
-const authStore = useAuthStore()
 
 const { sidebarTab } = storeToRefs(noteStore)
-const { currentUser, isLoggedIn } = storeToRefs(authStore)
-
-const avatarChar = computed(() => {
-  if (!currentUser.value) return '?'
-  return (currentUser.value.nickname || currentUser.value.username || '?').slice(0, 1).toUpperCase()
-})
 
 function openNewNoteModal() { uiStore.openModal('new-note-modal') }
 function openAISettings() { uiStore.openModal('ai-settings-modal') }
-function openAuth() { uiStore.openModal('auth-modal') }
-function openProfile() { uiStore.openModal('profile-modal') }
 </script>
 
 <style scoped>
@@ -111,23 +88,6 @@ function openProfile() { uiStore.openModal('profile-modal') }
   font-size: 14px; transition: var(--transition);
 }
 .sidebar-add-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-
-/* 用户信息条 */
-.user-bar {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 16px; cursor: pointer; transition: var(--transition);
-  border-bottom: 1px solid var(--border-light);
-}
-.user-bar:hover { background: var(--bg-hover); }
-.user-avatar-sm {
-  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; color: #fff;
-}
-.user-info { flex: 1; min-width: 0; }
-.user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); truncate: true; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.user-bio { font-size: 11px; color: var(--text-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.user-arrow { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
 
 .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border-light); }
 .sidebar-tab {
