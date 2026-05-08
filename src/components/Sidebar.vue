@@ -8,18 +8,6 @@
       </div>
       <div class="sidebar-actions">
         <button class="sidebar-settings-btn" @click="openAISettings" title="AI 设置">🤖</button>
-        <!-- 已登录：头像按钮 -->
-        <button
-          v-if="isLoggedIn"
-          class="sidebar-avatar-btn"
-          :style="{ background: currentUser.avatarColor || '#818cf8' }"
-          @click="openProfile"
-          title="个人资料"
-        >{{ avatarChar }}</button>
-        <!-- 未登录：登录按钮 -->
-        <button v-else class="sidebar-login-btn" @click="openAuth" title="登录 / 注册">
-          👤
-        </button>
         <button class="sidebar-add-btn" @click="openNewNoteModal">＋</button>
       </div>
     </div>
